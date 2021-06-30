@@ -1,0 +1,169 @@
+
+<%@page import="Util.AppUtil"%>
+<%@page import="Bean.OrderLimit"%>
+<%@page import="Bean.OrderBean"%>
+<%@page import="java.util.List"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="Services.OrderServices"%>
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<jsp:include page="../Template/AlertMsg.jsp" />
+<jsp:include page="../Template/AllCssStyle.jsp" />
+<style>
+body {
+	margin: 0;
+	padding: 10px;
+}
+</style>
+
+<table class="mytable">
+	<tr>
+		<td colspan="9" class="title">
+			<%
+				OrderLimit limit = (OrderLimit) session.getAttribute("orderlimit");
+
+				if (request.getParameter("type") != null)
+					limit.order_type = request.getParameter("type");
+
+				if (request.getParameter("order_name") != null)
+					limit.order_name = request.getParameter("order_name");
+				
+				if (request.getParameter("order_page") != null)
+					limit.order_page = request.getParameter("order_page");
+				else
+					limit.order_page = "1";
+
+				switch (limit.order_type) {
+				case "weixiu":
+					out.print("维修管理");
+					break;
+				case "anzhuang":
+					out.print("安装管理");
+					break;
+				case "baoyang":
+					out.print("保养管理");
+					break;
+				}
+			%>
+		</td>
+	</tr>
+	<tr>
+		<td>产品名称</td>
+		<td colspan="8">
+			<form type="POST" style="margin: 0">
+				<input name="order_name" /> <input value="查询" type="submit" />
+			</form>
+		</td>
+	</tr>
+	<tr>
+		<th>订单编号</th>
+		<th>产品名称</th>
+		<th>需求</th>
+		<th>提交用户</th>
+		<th>联系电话</th>
+		<th>地址</th>
+		<th>上门时间</th>
+		<th>状态</th>
+		<th>操作</th>
+	</tr>
+	<%
+	
+		
+	
+		List<OrderBean> orders = OrderServices.GetOrderLimit(limit);
+	
+		System.err.println(orders==null);
+
+		for (OrderBean o : orders) {
+			out.print("<tr>");
+			out.print("<td>" + o.getId() + "</td>");
+			out.print("<td>" + o.getOrder_name() + "</td>");
+			out.print("<td>" + o.getWant() + "</td>");
+			out.print("<td>" + o.getUser_name() + "</td>");
+			out.print("<td>" + o.getUser_mobile() + "</td>");
+			out.print("<td>" + o.getUser_address() + "</td>");
+			out.print("<td>" + o.getDate() + "</td>");
+			switch (o.getStatus()) {
+			case 1:
+				out.print("<td>订单未审核</td>");
+				break;
+			case 2:
+				out.print("<td>订单未付款</td>");
+				break;
+			case 3:
+				out.print("<td>订单已完成</td>");
+				break;
+			default:
+				out.print("<td>订单异常</td>");
+			}
+			out.print("<td>");
+			switch (o.getStatus()) {
+			case 1:
+				out.print("<a href='../Servlet/ShenHe?orderid=" + o.getId() + "'>审核</a>");
+				break;
+			case 2:
+				out.print("等待用户付款");
+				break;
+			case 3:
+				out.print("");
+				break;
+			default:
+				out.print("订单异常");
+			}
+			out.print("</td>");
+			out.print("</tr>");
+		}
+	%>
+</table>
+
+<div class="count">
+		<%
+		
+			//所有行数
+			int coun = orders.size();
+		
+			//当前页码
+			int cpi = Integer.parseInt(limit.order_page);
+			//上一页
+			int pcpi = ((cpi-1)==0)?cpi:(cpi-1);
+			//获取 该限制条件下的所有行数
+			int coun_all = OrderServices.GetOrderLimitAllCount(limit);
+			//尾页
+			int lcpi = coun_all == AppUtil.fenye ? 1 :
+				coun_all % AppUtil.fenye == 0 ? coun_all / AppUtil.fenye :
+					(coun_all / AppUtil.fenye) + 1;
+			
+			
+			/* System.out.println(coun_all);
+			//总页数
+			int lcpia = (coun_all==AppUtil.fenye?1:((coun_all/AppUtil.fenye)+1)); */
+			
+			//首页
+			int icpi = 1;
+			
+			//下一页
+			int ncpi = cpi==lcpi?cpi:(cpi+1);
+			
+			//标准地址
+			String cp = request.getRequestURI()+"?order_page=";
+		
+			out.print("共"+coun_all+"条记录，当前第 "+cpi+"页，共"+lcpi+"页");
+		
+			
+		%>
+
+	<nav aria-label="Page navigation">
+		<ul class="pagination">
+			<li><a href="<% out.print(cp+icpi); %>" aria-label="Previous"> <span
+					aria-hidden="true">首页</span>
+			</a></li>
+			<li><a href='<% out.print(cp+pcpi); %>'>上一页</a></li>
+			<li><a href="<% out.print(cp+ncpi); %>">下一页</a></li>
+			<li><a href="<% out.print(cp+lcpi); %>" aria-label="Next"> <span aria-hidden="true">尾页</span>
+			</a></li>
+		</ul>
+	</nav>
+</div>
+
+
